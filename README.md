@@ -1,9 +1,6 @@
 # RESTYLEgc
 Fork of restylegc - a php hook  to allow custom styling of a google calendar without the need to call on calviz.
 
-
-FILE: restylegc.php
- 
 ##DESCRIPTION:
  This script is an intermediary between an iframe and Google Calendar that
  allows you to override the default style.
