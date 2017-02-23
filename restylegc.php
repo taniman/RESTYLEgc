@@ -1,5 +1,5 @@
 <?php
-/***********************************************i********************************
+/*******************************************************************************
  * FILE: restylegc.php
  *
  * DESCRIPTION:
@@ -8,6 +8,17 @@
  *
  * USAGE:
  *  <iframe src="restylegc.php?src=user%40domain.tld"></iframe>
+ *
+ *  Example with some optional parameters
+ *  <iframe src="http://www.yourdomain.com/restylegc.php?
+ *  title=Your title&showNav=0&
+ *  showDate=0&showPrint=0&showTabs=0&showCalendars=0&
+ *  showTz=0&mode=AGENDA&height=600&wkst=2&hl=nl&
+ *  bgcolor=%23FFFFFF&src=user@gmail.com&
+ *  color=%23125A12&src=3ssm39l64snn6kolqndta8p2o4%40group.calendar.google.com&
+ *  color=%23711616&ctz=Europe%2FAmsterdam&
+ *  customcss=http://www.yourdomain.com/css/custom.css"
+ *  style="border-width:0" width="230" height="300" frameborder="0" scrolling="no"></iframe>
  *
  *  where user@domain.tld is a valid Google Calendar account.
  *
@@ -29,6 +40,8 @@
  *    src:           url encoded Google Calendar account (required)
  *    color:         url encoded hex color value
  *                   must immediately follow src
+ *    customcss      provide absolute url to the location of your css file.
+ *                   an etra link tag will be added to the source to laod your css file.
  *
  *    The query string can contain multiple src/color pairs.  It's recommended
  *    to have these pairs of query string parameters at the end of the query
@@ -50,7 +63,13 @@
  *   19 December 2009 - Removed MyGoogleCal references
  *                      Updated Dojo version
  *                      Archived additional .js and .css files
- *
+ *   13 November 2010 - Changed Google Calendar protocol to https
+ *                      Switched back to jQuery
+ *   03 June     2011 - Put jQuery in no-conflict mode
+ *   18 June     2011 - Fixed bug to remove width style from bubble
+ *   23 February 2017 - Fixes for google calendar updated references.
+ *                      Removed restyle.css. Use customcss paramter to provide url to your
+ *                      css file that overrides google calendar css
  *
  * ACKNOWLEDGMENTS:
  *   Michael McCall (http://www.castlemccall.com/) for pointing out "htmlembed"
@@ -58,7 +77,8 @@
  *   TechTriad.com (http://techtriad.com/) for requesting and funding the
  *       Javascript code to edit CSS properties and for selflessly letting the
  *       code be published for everyone's use and benefit.
- *
+ *   Steve Sawaya (http://sawayaconsulting.com/) for the jQuery no-conflict patch
+ *   Elroy Peters for fixing the code after google calendar upgrade to https
  *
  * MIT LICENSE:
  * Copyright (c) 2009 Brian Gibson (http://www.restylegc.com/)
@@ -84,119 +104,64 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  *
- ******************************************************************************/
-
-/* URL for overriding stylesheet
- * The best way to create this stylesheet is to
- * 1) Load "http://www.google.com/calendar/embed?src=user%40domain.tld" in a
- *    browser,
- * 2) View the source (e.g., View->Page Source in Firefox),
- * 3) Copy the relative URL of the stylesheet (i.e., the href value of the
- *    <link> tag),
- * 4) Load the stylesheet in the browser by pasting the stylesheet URL into
- *    the address bar so that it reads similar to:
- *    "http://www.google.com/calendar/d003e2eff7c42eebf779ecbd527f1fe0embedcompiled.css"
- * 5) Save the stylesheet (e.g., File->Save Page As in Firefox)
- * Edit this new file to change the style of the calendar.
- *
- * As an alternative method, take the URL you copied in Step 3, and paste it
- * in the URL field at http://mabblog.com/cssoptimizer/uncompress.html.
- * That site will automatically format the CSS so that it's easier to edit.
- */
-$stylesheet = 'restylegc.css';
-
-/*
- * Set domain to your google apps domain to use a google apps hosted calendar
- * ex: $domain = 'mitesdesign.com';
- */
-$domain = false;
-
-/*******************************************************************************
  * DO NOT EDIT BELOW UNLESS YOU KNOW WHAT YOU'RE DOING
  ******************************************************************************/
-
-// Check if a cached version already exists
-// Caching is simple and will not support multiple calendars
-// yet... if I run into the need I'll add it
-// anyone else is welcome to fork this and make it more intelligent
-$cachefile = 'cache/'.basename($_SERVER['SCRIPT_NAME']);
-$cachetime = 120 * 60; // 2 hours
-if (file_exists($cachefile) && (time() - $cachetime < filemtime($cachefile))) {
-    include($cachefile);
-    echo "<!-- Cached ".date('jS F Y H:i', filemtime($cachefile))." -->";
-    exit;
-}
-
 // URL for the calendar
 $url = "";
 if(count($_GET) > 0) {
-  if ($domain) {
-    $url = "http://www.google.com/calendar/hosted/$domain/embed?" . $_SERVER['QUERY_STRING'];
-  } else {
-    $url = "http://www.google.com/calendar/embed?" . $_SERVER['QUERY_STRING'];
-  }
-} else {
-  exit('No Calendar variables');
+  $url = "https://calendar.google.com/calendar/embed?" . $_SERVER['QUERY_STRING'];
 }
-
 // Request the calendar
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_HEADER, 0);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-// Added based on suggestions from troubleshooting "Moved Temporarily" page
-curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1); // follow redirects
-curl_setopt($ch, CURLOPT_MAXREDIRS, 10); // maximum number of redirects
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 $buffer = curl_exec($ch);
-
-// Added based on suggestions from troubleshooting "Moved Temporarily" page
-$n = 0; //failsafe so this thing doesn't loop to infinity
-while ((strpos($buffer, 'Moved Temporarily') !== false) && ($n < 10)) {
-   $n++;
-   //re-execute the cURL request
-   $buffer = curl_exec($ch);
-}
-
 curl_close($ch);
 
-// Point stylesheet and javascript to custom versions
-$pattern = '/(<link.*>)/';
-$replacement = '<link rel="stylesheet" type="text/css" href="' . $stylesheet . '" />';
+// Point stylesheet tocustom version
+if(isset($_GET["customcss"])){
+	$pattern = '/(<\/head>)/';
+	$replacement = '<link rel="stylesheet" type="text/css" href="' . $_GET["customcss"] . '" /></head>';
+	$buffer = preg_replace($pattern, $replacement, $buffer);
+}
+
+//fix java script references
+$pattern = '#("/calendar)#';
+$replacement = '"https://calendar.google.com/calendar';
 $buffer = preg_replace($pattern, $replacement, $buffer);
 
-$pattern = '/src="(.*js)"/';
-$replacement = 'src="restylegc-js.php?$1"';
-$buffer = preg_replace($pattern, $replacement, $buffer);
-
-// Add a hook to the window onload function
-$pattern = '/}\);}<\/script>/';
-$replacement = '}); restylegc();}</script>';
+//fix images
+$pattern = '/("images)/';
+$replacement = '"https://calendar.google.com/calendar/images';
 $buffer = preg_replace($pattern, $replacement, $buffer);
 
 // Use DHTML to modify the DOM after the calendar loads
 $pattern = '/(<\/head>)/';
 $replacement = <<<RGC
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
 <script type="text/javascript">
+// switch to no-conflict mode (see http://docs.jquery.com/Using_jQuery_with_Other_Libraries)
+jQuery.noConflict();
 function restylegc() {
     // remove inline style from body so background-color can be set using the stylesheet
-    $('body').removeAttr('style');
-
+    jQuery('body').removeAttr('style');
     // iterate over each bubble and remove the width property from the style attribute
-    // so that the width can be set using the stylesheet
-    $('.bubble').each(function() {
-        $(this).css('width', '');
+    // so that the width can be set using the stylesheet (for example, .bubble { width:400px; })
+    jQuery('.bubble').each(function(){
+        style = jQuery(this).attr('style').replace(/width: \d+px;?/i, '');
+        jQuery(this).attr('style', style);
     });
+    // see jQuery documentation for other ways to edit DOM
+    // http://docs.jquery.com/
 }
 </script>
 </head>
 RGC;
 $buffer = preg_replace($pattern, $replacement, $buffer);
 
-$fp = fopen($cachefile, 'w'); // open the cache file for writing
-fwrite($fp, $buffer); // save the contents of output buffer to the file
-fclose($fp); // close the file
-
-// display the calendar
-echo $buffer;
+// Display the calendar
+print $buffer;
 ?>

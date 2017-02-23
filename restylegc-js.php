@@ -16,7 +16,7 @@
 // URL for the javascript
 $url = "";
 if(count($_GET) > 0) {
-  $url = "http://www.google.com/calendar/" . $_SERVER['QUERY_STRING'];
+  $url = "https://calendar.google.com/calendar/" . $_SERVER['QUERY_STRING'];
 }
 
 /* If you would like to freeze the calendar version, download the Javascript
@@ -26,19 +26,21 @@ if(count($_GET) > 0) {
  *
  * Edit and uncomment the following line to freeze the calendar version.
  */
-//$url = "http://myserver.tld/path/to/archive/371be1f592b0b5f982952f457d82fd40embedcompiled__en.js";
+//$url = "http://myserver.tld/path/to/archive/e0437df6468589031e718f3606b03917embedcompiled__en.js";
 
 // Request the javascript
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_HEADER, 0);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 $buffer = curl_exec($ch);
 curl_close($ch);
 
 // Fix URLs in the javascript
 $pattern = '/this\.[a-zA-Z]{1,2}\+"calendar/';
-$replacement = '"http://www.google.com/calendar';
+$replacement = '"https://calendar.google.com/calendar';
 $buffer = preg_replace($pattern, $replacement, $buffer);
 
 // Display the javascript
