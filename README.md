@@ -26,26 +26,26 @@ Fork of restylegc - a php hook  to allow custom styling of a google calendar wit
  
 ##VALID QUERY STRING PARAMETERS:
 |     param         |                         value
-|:-----------------:|:----------------------------------------------------------:|
-|   title        | any valid url encoded string |
-|                |    if not present, takes title from first src                  |
-|   showTitle    | 0 or 1 (default)                                                 |
-|   showNav      | 0 or 1 (default)                                          |
-|   showDate     | 0 or 1 (default)                                               |
-|   showTabs     | 0 or 1 (default)                                                |
-|   showCalendars| 0 or 1 (default)                                                  |
-|   mode         | WEEK, MONTH (default), AGENDA                                            |
-|   height       | a positive integer (should be same height as iframe)                     |
-|   wkst         | 1 (Sun; default), 2 (Mon), or 7 (Sat)                                    |
-|   hl           | en, zh_TW, zh_CN, da, nl, en_GB, fi, fr, de, it, ja, ko,                        |
-|                |   no, pl, pt_BR, ru, es, sv, tr                                          |
-|                |   if not present, takes language from first src                             |
-|   bgcolor      | url encoded hex color value, #FFFFFF (default)                                |
-|   src          | url encoded Google Calendar account (required)                        |
-|   color        | url encoded hex color value      \                                         |
-|                | must immediately follow src                                   |
-|   customcss    |provide absolute url to the location of your css file.\                |
-|                |  an etra link tag will be added to the source to laod your css file. |
+|:-----------------:|:--------------------------------------------------------------------:|
+|   title           | any valid url encoded string                                         |
+|                   |    if not present, takes title from first src                        |
+|   showTitle       | 0 or 1 (default)                                                     |
+|   showNav         | 0 or 1 (default)                                                     |
+|   showDate        | 0 or 1 (default)                                                     |
+|   showTabs        | 0 or 1 (default)                                                     |
+|   showCalendars   | 0 or 1 (default)                                                     |
+|   mode            | WEEK, MONTH (default), AGENDA                                        |
+|   height          | a positive integer (should be same height as iframe)                 |
+|   wkst            | 1 (Sun; default), 2 (Mon), or 7 (Sat)                                |
+|   hl              | en, zh_TW, zh_CN, da, nl, en_GB, fi, fr, de, it, ja, ko,             |
+|                   |   no, pl, pt_BR, ru, es, sv, tr                                      |
+|                   |   if not present, takes language from first src                      |
+|   bgcolor         | url encoded hex color value, #FFFFFF (default)                       |
+|   src             | url encoded Google Calendar account (required)                       |
+|   color           | url encoded hex color value                                          |
+|                   | must immediately follow src                                          |
+|   customcss       |provide absolute url to the location of your css file.                |
+|                   |  an etra link tag will be added to the source to laod your css file. |
                                                                                      
    The query string can contain multiple src/color pairs.  It's recommended
    to have these pairs of query string parameters at the end of the query
